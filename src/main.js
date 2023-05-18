@@ -1,5 +1,6 @@
 import * as THREE from "three"
 import { setupScene } from "./setup-scene"
+import { ExtrudeGeometry } from "./ExtrudeGeometry"
 
 const { scene } = setupScene()
 
@@ -7,19 +8,10 @@ const uvGenerator = {
 
 	generateTopUV: function( geometry, vertices, idxA, idxB, idxC ) {
 
-		let ax, ay, bx, by, cx, cy;
-
-		ax = vertices[ idxA * 3 ]
-		ay = vertices[ ( idxA * 3 ) + 1 ]
-		bx = vertices[ idxB * 3 ]
-		by = vertices[ ( idxB * 3 ) + 1 ]
-		cx = vertices[ idxC * 3 ]
-		cy = vertices[ ( idxC * 3 ) + 1 ]
-
 		return [
-			new THREE.Vector2( ax, ay ),
-			new THREE.Vector2( bx, by ),
-			new THREE.Vector2( cx, cy ),
+			new THREE.Vector2( 0, 0 ),
+			new THREE.Vector2( 0, 0 ),
+			new THREE.Vector2( 0, 0 ),
 		]
 	},
 
@@ -56,9 +48,7 @@ shape.lineTo( 0.1, size )
 shape.lineTo( 0.1, 0 )
 shape.lineTo( 0, 0 )
 
-const geometry = new THREE.ExtrudeGeometry( shape, extrudeCfg )
-geometry.computeBoundingBox()
-geometry.computeVertexNormals()
+const geometry = new ExtrudeGeometry( shape, extrudeCfg )
 
 const texture = new THREE.TextureLoader().load( "/road.png" )
 texture.colorSpace = THREE.SRGBColorSpace
