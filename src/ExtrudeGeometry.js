@@ -3,7 +3,6 @@ import {
 	Float32BufferAttribute,
 	Vector2,
 	Vector3,
-	Shape,
 	ShapeUtils,
 } from "three"
 
@@ -18,14 +17,14 @@ class ExtrudeGeometry extends BufferGeometry {
 		const verticesArray = []
 		const uvArray = []
 
-		addShape( shape )
+		addShape()
 
 		this.setAttribute( "position", new Float32BufferAttribute( verticesArray, 3 ) )
 		this.setAttribute( "uv", new Float32BufferAttribute( uvArray, 2 ) )
 
 		this.computeVertexNormals()
 
-		function addShape( shape ) {
+		function addShape() {
 
 			const placeholder = []
 
@@ -51,9 +50,7 @@ class ExtrudeGeometry extends BufferGeometry {
 				position2 = new Vector3()
 			}
 
-			const shapePoints = shape.extractPoints( curveSegments )
-
-			let vertices = shapePoints.shape
+			let vertices = shape
 
 			const faces = ShapeUtils.triangulateShape( vertices, [] )
 
