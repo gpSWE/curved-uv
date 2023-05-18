@@ -9,7 +9,7 @@ import {
 
 class ExtrudeGeometry extends BufferGeometry {
 
-	constructor( shapes, options ) {
+	constructor( shape, options ) {
 
 		super()
 
@@ -18,11 +18,7 @@ class ExtrudeGeometry extends BufferGeometry {
 		const verticesArray = []
 		const uvArray = []
 
-		for ( let i = 0, l = shapes.length; i < l; i ++ ) {
-
-			const shape = shapes[ i ]
-			addShape( shape )
-		}
+		addShape( shape )
 
 		this.setAttribute( "position", new Float32BufferAttribute( verticesArray, 3 ) )
 		this.setAttribute( "uv", new Float32BufferAttribute( uvArray, 2 ) )
@@ -37,15 +33,7 @@ class ExtrudeGeometry extends BufferGeometry {
 			const steps = options.steps !== undefined ? options.steps : 1
 			const depth = options.depth !== undefined ? options.depth : 1
 
-			let bevelEnabled = false
-			let bevelThickness = 0
-			let bevelSize = 0
-			let bevelOffset = 0
-			let bevelSegments = 0
-
 			const extrudePath = options.extrudePath
-
-			const uvgen = options.UVGenerator !== undefined ? options.UVGenerator : WorldUVGenerator
 
 			let extrudePts, extrudeByPath = false
 			let splineTube, binormal, normal, position2
@@ -66,40 +54,10 @@ class ExtrudeGeometry extends BufferGeometry {
 			const shapePoints = shape.extractPoints( curveSegments )
 
 			let vertices = shapePoints.shape
-			const holes = shapePoints.holes
 
-			const reverse = ! ShapeUtils.isClockWise( vertices )
-
-			if ( reverse ) {
-
-				vertices = vertices.reverse()
-
-				for ( let h = 0, hl = holes.length; h < hl; h ++ ) {
-
-					const ahole = holes[ h ]
-
-					if ( ShapeUtils.isClockWise( ahole ) ) {
-
-						holes[ h ] = ahole.reverse()
-					}
-				}
-			}
-
-			const faces = ShapeUtils.triangulateShape( vertices, holes )
+			const faces = ShapeUtils.triangulateShape( vertices, [] )
 
 			const contour = vertices
-
-			for ( let h = 0, hl = holes.length; h < hl; h ++ ) {
-
-				const ahole = holes[ h ]
-
-				vertices = vertices.concat( ahole )
-			}
-
-			function scalePt2( pt, vec, size ) {
-
-				return pt.clone().addScaledVector( vec, size )
-			}
 
 			const vlen = vertices.length, flen = faces.length
 
@@ -127,9 +85,7 @@ class ExtrudeGeometry extends BufferGeometry {
 					const ptNextShift_x = ( inNext.x - v_next_y / v_next_len )
 					const ptNextShift_y = ( inNext.y + v_next_x / v_next_len )
 
-					const sf = ( ( ptNextShift_x - ptPrevShift_x ) * v_next_y -
-							( ptNextShift_y - ptPrevShift_y ) * v_next_x ) /
-						( v_prev_x * v_next_y - v_prev_y * v_next_x )
+					const sf = ( ( ptNextShift_x - ptPrevShift_x ) * v_next_y - ( ptNextShift_y - ptPrevShift_y ) * v_next_x ) / ( v_prev_x * v_next_y - v_prev_y * v_next_x )
 
 					v_trans_x = ( ptPrevShift_x + v_prev_x * sf - inPt.x )
 					v_trans_y = ( ptPrevShift_y + v_prev_y * sf - inPt.y )
@@ -191,46 +147,13 @@ class ExtrudeGeometry extends BufferGeometry {
 				return new Vector2( v_trans_x / shrink_by, v_trans_y / shrink_by )
 			}
 
-			const contourMovements = []
-
-			for ( let i = 0, il = contour.length, j = il - 1, k = i + 1; i < il; i ++, j ++, k ++ ) {
-
-				if ( j === il ) j = 0
-				if ( k === il ) k = 0
-
-				contourMovements[ i ] = getBevelVec( contour[ i ], contour[ j ], contour[ k ] )
-			}
-
-			const holesMovements = []
-			let oneHoleMovements, verticesMovements = contourMovements.concat()
-
-			for ( let h = 0, hl = holes.length; h < hl; h ++ ) {
-
-				const ahole = holes[ h ]
-
-				oneHoleMovements = []
-
-				for ( let i = 0, il = ahole.length, j = il - 1, k = i + 1; i < il; i ++, j ++, k ++ ) {
-
-					if ( j === il ) j = 0
-					if ( k === il ) k = 0
-
-					oneHoleMovements[ i ] = getBevelVec( ahole[ i ], ahole[ j ], ahole[ k ] )
-				}
-
-				holesMovements.push( oneHoleMovements )
-				verticesMovements = verticesMovements.concat( oneHoleMovements )
-			}
-
-			const bs = bevelSize + bevelOffset
-
 			for ( let i = 0; i < vlen; i ++ ) {
 
 				const vert = vertices[ i ]
 
 				if ( ! extrudeByPath ) {
 
-					v( vert.x, vert.y, 0 )
+					placeholder.push( vert.x, vert.y, 0 )
 				}
 				else {
 
@@ -239,7 +162,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 					position2.copy( extrudePts[ 0 ] ).add( normal ).add( binormal )
 
-					v( position2.x, position2.y, position2.z )
+					placeholder.push( position2.x, position2.y, position2.z )
 				}
 			}
 
@@ -251,7 +174,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 					if ( ! extrudeByPath ) {
 
-						v( vert.x, vert.y, depth / steps * s )
+						placeholder.push( vert.x, vert.y, depth / steps * s )
 					}
 					else {
 
@@ -260,53 +183,12 @@ class ExtrudeGeometry extends BufferGeometry {
 
 						position2.copy( extrudePts[ s ] ).add( normal ).add( binormal )
 
-						v( position2.x, position2.y, position2.z )
+						placeholder.push( position2.x, position2.y, position2.z )
 					}
 				}
 			}
 
-			buildLidFaces()
-
-			buildSideFaces()
-
-			function buildLidFaces() {
-
-				const start = verticesArray.length / 3
-
-				for ( let i = 0; i < flen; i ++ ) {
-
-					const face = faces[ i ]
-					f3( face[ 2 ], face[ 1 ], face[ 0 ] )
-				}
-
-				for ( let i = 0; i < flen; i ++ ) {
-
-					const face = faces[ i ]
-					f3( face[ 0 ] + vlen * steps, face[ 1 ] + vlen * steps, face[ 2 ] + vlen * steps )
-				}
-
-				scope.addGroup( start, verticesArray.length / 3 - start, 0 )
-			}
-
-			function buildSideFaces() {
-
-				const start = verticesArray.length / 3
-				let layeroffset = 0
-				sidewalls( contour, layeroffset )
-				layeroffset += contour.length
-
-				for ( let h = 0, hl = holes.length; h < hl; h ++ ) {
-
-					const ahole = holes[ h ]
-					sidewalls( ahole, layeroffset )
-
-					layeroffset += ahole.length
-				}
-
-				scope.addGroup( start, verticesArray.length / 3 - start, 1 )
-			}
-
-			function sidewalls( contour, layeroffset ) {
+			function sidewalls( contour, layeroffset = 0 ) {
 
 				let i = contour.length
 
@@ -331,26 +213,7 @@ class ExtrudeGeometry extends BufferGeometry {
 				}
 			}
 
-			function v( x, y, z ) {
-
-				placeholder.push( x )
-				placeholder.push( y )
-				placeholder.push( z )
-			}
-
-			function f3( a, b, c ) {
-
-				addVertex( a )
-				addVertex( b )
-				addVertex( c )
-
-				const nextIndex = verticesArray.length / 3
-				const uvs = uvgen.generateTopUV( scope, verticesArray, nextIndex - 3, nextIndex - 2, nextIndex - 1 )
-
-				addUV( uvs[ 0 ] )
-				addUV( uvs[ 1 ] )
-				addUV( uvs[ 2 ] )
-			}
+			sidewalls( contour )
 
 			function f4( a, b, c, d ) {
 
@@ -390,58 +253,25 @@ class ExtrudeGeometry extends BufferGeometry {
 	}
 }
 
-const WorldUVGenerator = {
+const uvgen = {
 
-	generateTopUV: function ( geometry, vertices, indexA, indexB, indexC ) {
-
-		const a_x = vertices[ indexA * 3 ]
-		const a_y = vertices[ indexA * 3 + 1 ]
-		const b_x = vertices[ indexB * 3 ]
-		const b_y = vertices[ indexB * 3 + 1 ]
-		const c_x = vertices[ indexC * 3 ]
-		const c_y = vertices[ indexC * 3 + 1 ]
+	generateTopUV: () => {
 
 		return [
-			new Vector2( a_x, a_y ),
-			new Vector2( b_x, b_y ),
-			new Vector2( c_x, c_y )
+			new Vector2( 0, 0 ),
+			new Vector2( 0, 0 ),
+			new Vector2( 0, 0 )
 		]
 	},
 
-	generateSideWallUV: function ( geometry, vertices, indexA, indexB, indexC, indexD ) {
+	generateSideWallUV: () => {
 
-		const a_x = vertices[ indexA * 3 ]
-		const a_y = vertices[ indexA * 3 + 1 ]
-		const a_z = vertices[ indexA * 3 + 2 ]
-		const b_x = vertices[ indexB * 3 ]
-		const b_y = vertices[ indexB * 3 + 1 ]
-		const b_z = vertices[ indexB * 3 + 2 ]
-		const c_x = vertices[ indexC * 3 ]
-		const c_y = vertices[ indexC * 3 + 1 ]
-		const c_z = vertices[ indexC * 3 + 2 ]
-		const d_x = vertices[ indexD * 3 ]
-		const d_y = vertices[ indexD * 3 + 1 ]
-		const d_z = vertices[ indexD * 3 + 2 ]
-
-		if ( Math.abs( a_y - b_y ) < Math.abs( a_x - b_x ) ) {
-
-			return [
-				new Vector2( a_x, 1 - a_z ),
-				new Vector2( b_x, 1 - b_z ),
-				new Vector2( c_x, 1 - c_z ),
-				new Vector2( d_x, 1 - d_z )
-			]
-
-		}
-		else {
-
-			return [
-				new Vector2( a_y, 1 - a_z ),
-				new Vector2( b_y, 1 - b_z ),
-				new Vector2( c_y, 1 - c_z ),
-				new Vector2( d_y, 1 - d_z )
-			]
-		}
+		return [
+			new Vector2( 0, 0 ),
+			new Vector2( 0, 1 ),
+			new Vector2( 1, 1 ),
+			new Vector2( 1, 0 ),
+		]
 	}
 }
 
