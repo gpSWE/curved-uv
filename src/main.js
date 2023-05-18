@@ -12,19 +12,14 @@ const curve = new THREE.CatmullRomCurve3( [
 	new THREE.Vector3( 0, 0, 10 ),
 ] )
 
-const extrudeCfg = {
-	steps: 20,
-	extrudePath: curve,
-}
-
 const shape = [
 	new THREE.Vector2( 0, 0 ),
 	new THREE.Vector2( 0, size ),
-	new THREE.Vector2( 1, size ),
-	new THREE.Vector2( 1, 0 ),
+	new THREE.Vector2( 0, size ),
+	new THREE.Vector2( 0, 0 ),
 ]
 
-const geometry = new ExtrudeGeometry( shape, extrudeCfg )
+const geometry = new ExtrudeGeometry( shape, curve, 20 )
 
 const texture = new THREE.TextureLoader().load( "/road.png" )
 texture.colorSpace = THREE.SRGBColorSpace
