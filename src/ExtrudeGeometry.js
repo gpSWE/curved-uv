@@ -13,13 +13,6 @@ class ExtrudeGeometry extends BufferGeometry {
 
 		super()
 
-		this.parameters = {
-			shapes: shapes,
-			options: options
-		}
-
-		shapes = Array.isArray( shapes ) ? shapes : [ shapes ]
-
 		const scope = this
 
 		const verticesArray = []
@@ -113,8 +106,6 @@ class ExtrudeGeometry extends BufferGeometry {
 			}
 
 			function scalePt2( pt, vec, size ) {
-
-				if ( ! vec ) console.error( "THREE.ExtrudeGeometry: vec does not exist" )
 
 				return pt.clone().addScaledVector( vec, size )
 			}
@@ -489,48 +480,6 @@ class ExtrudeGeometry extends BufferGeometry {
 			}
 		}
 	}
-
-	copy( source ) {
-
-		super.copy( source )
-
-		this.parameters = Object.assign( {}, source.parameters )
-
-		return this
-	}
-
-	toJSON() {
-
-		const data = super.toJSON()
-
-		const shapes = this.parameters.shapes
-		const options = this.parameters.options
-
-		return toJSON( shapes, options, data )
-	}
-
-	static fromJSON( data, shapes ) {
-
-		const geometryShapes = []
-
-		for ( let j = 0, jl = data.shapes.length; j < jl; j ++ ) {
-
-			const shape = shapes[ data.shapes[ j ] ]
-
-			geometryShapes.push( shape )
-		}
-
-		const extrudePath = data.options.extrudePath
-
-		if ( extrudePath !== undefined ) {
-
-			data.options.extrudePath = new Curves[ extrudePath.type ]().fromJSON( extrudePath )
-
-		}
-		
-		return new ExtrudeGeometry( geometryShapes, data.options )
-	}
-
 }
 
 const WorldUVGenerator = {
@@ -586,31 +535,6 @@ const WorldUVGenerator = {
 			]
 		}
 	}
-}
-
-function toJSON( shapes, options, data ) {
-
-	data.shapes = []
-
-	if ( Array.isArray( shapes ) ) {
-
-		for ( let i = 0, l = shapes.length; i < l; i ++ ) {
-
-			const shape = shapes[ i ]
-
-			data.shapes.push( shape.uuid )
-		}
-	}
-	else {
-
-		data.shapes.push( shapes.uuid )
-	}
-
-	data.options = Object.assign( {}, options )
-
-	if ( options.extrudePath !== undefined ) data.options.extrudePath = options.extrudePath.toJSON()
-
-	return data
 }
 
 export { ExtrudeGeometry }

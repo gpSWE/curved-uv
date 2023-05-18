@@ -48,7 +48,7 @@ shape.lineTo( 0.1, size )
 shape.lineTo( 0.1, 0 )
 shape.lineTo( 0, 0 )
 
-const geometry = new ExtrudeGeometry( shape, extrudeCfg )
+const geometry = new ExtrudeGeometry( [ shape ], extrudeCfg )
 
 const texture = new THREE.TextureLoader().load( "/road.png" )
 texture.colorSpace = THREE.SRGBColorSpace
