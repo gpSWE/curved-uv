@@ -4,9 +4,9 @@ import {
 	Vector3,
 } from "three"
 
-class ExtrudeGeometry extends BufferGeometry {
+class ContourGeometry extends BufferGeometry {
 
-	constructor( shape, curve, steps ) {
+	constructor( curve, steps, size ) {
 
 		super()
 
@@ -21,10 +21,14 @@ class ExtrudeGeometry extends BufferGeometry {
 		const normal = new Vector3()
 		const position = new Vector3()
 
-		for ( let i = 0; i < shape.length; i ++ ) {
+		const quad = [ 0, 0, 0, size, 0, size, 0, 0 ]
 
-			normal.copy( splineTube.normals[ 0 ] ).multiplyScalar(  shape[ i ].x )
-			binormal.copy( splineTube.binormals[ 0 ] ).multiplyScalar(  shape[ i ].y )
+		for ( let i = 0; i < 4; i ++ ) {
+
+			normal.copy( splineTube.normals[ 0 ] ).multiplyScalar( quad[ i * 2 ] )
+
+			binormal.copy( splineTube.binormals[ 0 ] ).multiplyScalar( quad[ i * 2 + 1 ] )
+
 			position.copy( extrudePts[ 0 ] ).add( normal ).add( binormal )
 
 			placeholder.push( ...position )
@@ -32,28 +36,28 @@ class ExtrudeGeometry extends BufferGeometry {
 
 		for ( let s = 1; s <= steps; s ++ ) {
 
-			for ( let i = 0; i < shape.length; i ++ ) {
+			for ( let i = 0; i < 4; i ++ ) {
 
-				normal.copy( splineTube.normals[ s ] ).multiplyScalar(  shape[ i ].x )
-				binormal.copy( splineTube.binormals[ s ] ).multiplyScalar(  shape[ i ].y )
+				normal.copy( splineTube.normals[ s ] ).multiplyScalar( quad[ i * 2 ] )
+
+				binormal.copy( splineTube.binormals[ s ] ).multiplyScalar( quad[ i * 2 + 1 ] )
+
 				position.copy( extrudePts[ s ] ).add( normal ).add( binormal )
 
 				placeholder.push( ...position )
 			}
 		}
 
-		let i = shape.length
-
-		console.log( i )
+		let i = 4
 
 		while ( -- i >= 0 ) {
 
-			const k = i - 1 < 0 ? shape.length - 1 : i - 1
+			const k = i - 1 < 0 ? 3 : i - 1
 
 			for ( let s = 0, sl = steps; s < sl; s ++ ) {
 
-				const slen1 = shape.length * s
-				const slen2 = shape.length * ( s + 1 )
+				const slen1 = 4 * s
+				const slen2 = 4 * ( s + 1 )
 
 				const a = i + slen1
 				const b = k + slen1
@@ -78,4 +82,4 @@ class ExtrudeGeometry extends BufferGeometry {
 	}
 }
 
-export { ExtrudeGeometry }
+export { ContourGeometry }

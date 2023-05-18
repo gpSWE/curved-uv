@@ -1,25 +1,18 @@
 import * as THREE from "three"
 import { setupScene } from "./setup-scene"
-import { ExtrudeGeometry } from "./ExtrudeGeometry"
+import { ContourGeometry } from "./ContourGeometry"
 
 const { scene } = setupScene()
 
-const size = 2
-
-const curve = new THREE.CatmullRomCurve3( [
-	new THREE.Vector3( - 10, 0, 0 ),
-	new THREE.Vector3( 0, 0, 0 ),
-	new THREE.Vector3( 0, 0, 10 ),
-] )
-
-const shape = [
-	new THREE.Vector2( 0, 0 ),
-	new THREE.Vector2( 0, size ),
-	new THREE.Vector2( 0, size ),
-	new THREE.Vector2( 0, 0 ),
+const points = [
+	new THREE.Vector3( -5, -2.5, 0 ),
+	new THREE.Vector3( 0, 2.5, 0 ),
+	new THREE.Vector3( 5, -2.5, 0 ),
 ]
 
-const geometry = new ExtrudeGeometry( shape, curve, 20 )
+const curve = new THREE.QuadraticBezierCurve3( ...points )
+
+const geometry = new ContourGeometry( curve, 2, 1 )
 
 const texture = new THREE.TextureLoader().load( "/road.png" )
 texture.colorSpace = THREE.SRGBColorSpace
@@ -30,3 +23,17 @@ const material = new THREE.MeshStandardMaterial( { map: texture } )
 const mesh = new THREE.Mesh( geometry, material )
 
 scene.add( mesh )
+
+{
+	const geometry = new THREE.BufferGeometry().setFromPoints( points )
+	const material = new THREE.PointsMaterial( { size: 0.25 } )
+	const mesh = new THREE.Points( geometry, material )
+	scene.add( mesh )
+}
+
+{
+	const geometry = new THREE.BufferGeometry().setFromPoints( points )
+	const material = new THREE.LineBasicMaterial( { color: 0xffff00 } )
+	const mesh = new THREE.Line( geometry, material )
+	scene.add( mesh )
+}

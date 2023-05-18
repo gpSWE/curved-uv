@@ -7,7 +7,8 @@ const setupScene = () => {
 	scene.background = new THREE.Color( 0x202020 )
 
 	const camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1_000 )
-	camera.position.set( 0, 20, 0 )
+	camera.up = new THREE.Vector3( 0, 0, 1 )
+	camera.position.set( 0, 0, 16 )
 	camera.lookAt( 0, 0, 0 )
 	camera.updateProjectionMatrix()
 
@@ -30,7 +31,8 @@ const setupScene = () => {
 	// Helpers
 
 	{
-		const helper = new THREE.AxesHelper( 1_000 )
+		const helper = new THREE.GridHelper( 12, 12, 0x808080, 0x404040 )
+		helper.rotateX( - Math.PI / 2 )
 		scene.add( helper )
 	}
 
