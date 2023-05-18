@@ -37,11 +37,11 @@ class ExtrudeGeometry extends BufferGeometry {
 			const steps = options.steps !== undefined ? options.steps : 1
 			const depth = options.depth !== undefined ? options.depth : 1
 
-			let bevelEnabled = options.bevelEnabled !== undefined ? options.bevelEnabled : true
-			let bevelThickness = options.bevelThickness !== undefined ? options.bevelThickness : 0.2
-			let bevelSize = options.bevelSize !== undefined ? options.bevelSize : bevelThickness - 0.1
-			let bevelOffset = options.bevelOffset !== undefined ? options.bevelOffset : 0
-			let bevelSegments = options.bevelSegments !== undefined ? options.bevelSegments : 3
+			let bevelEnabled = false
+			let bevelThickness = 0
+			let bevelSize = 0
+			let bevelOffset = 0
+			let bevelSegments = 0
 
 			const extrudePath = options.extrudePath
 
@@ -55,21 +55,12 @@ class ExtrudeGeometry extends BufferGeometry {
 				extrudePts = extrudePath.getSpacedPoints( steps )
 
 				extrudeByPath = true
-				bevelEnabled = false
 
 				splineTube = extrudePath.computeFrenetFrames( steps, false )
 
 				binormal = new Vector3()
 				normal = new Vector3()
 				position2 = new Vector3()
-			}
-
-			if ( ! bevelEnabled ) {
-
-				bevelSegments = 0
-				bevelThickness = 0
-				bevelSize = 0
-				bevelOffset = 0
 			}
 
 			const shapePoints = shape.extractPoints( curveSegments )
@@ -231,38 +222,11 @@ class ExtrudeGeometry extends BufferGeometry {
 				verticesMovements = verticesMovements.concat( oneHoleMovements )
 			}
 
-			for ( let b = 0; b < bevelSegments; b ++ ) {
-
-				const t = b / bevelSegments
-				const z = bevelThickness * Math.cos( t * Math.PI / 2 )
-				const bs = bevelSize * Math.sin( t * Math.PI / 2 ) + bevelOffset
-
-				for ( let i = 0, il = contour.length; i < il; i ++ ) {
-
-					const vert = scalePt2( contour[ i ], contourMovements[ i ], bs )
-
-					v( vert.x, vert.y, - z )
-				}
-
-				for ( let h = 0, hl = holes.length; h < hl; h ++ ) {
-
-					const ahole = holes[ h ]
-					oneHoleMovements = holesMovements[ h ]
-
-					for ( let i = 0, il = ahole.length; i < il; i ++ ) {
-
-						const vert = scalePt2( ahole[ i ], oneHoleMovements[ i ], bs )
-
-						v( vert.x, vert.y, - z )
-					}
-				}
-			}
-
 			const bs = bevelSize + bevelOffset
 
 			for ( let i = 0; i < vlen; i ++ ) {
 
-				const vert = bevelEnabled ? scalePt2( vertices[ i ], verticesMovements[ i ], bs ) : vertices[ i ]
+				const vert = vertices[ i ]
 
 				if ( ! extrudeByPath ) {
 
@@ -283,7 +247,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				for ( let i = 0; i < vlen; i ++ ) {
 
-					const vert = bevelEnabled ? scalePt2( vertices[ i ], verticesMovements[ i ], bs ) : vertices[ i ]
+					const vert = vertices[ i ]
 
 					if ( ! extrudeByPath ) {
 
@@ -301,39 +265,6 @@ class ExtrudeGeometry extends BufferGeometry {
 				}
 			}
 
-			for ( let b = bevelSegments - 1; b >= 0; b -- ) {
-
-				const t = b / bevelSegments
-				const z = bevelThickness * Math.cos( t * Math.PI / 2 )
-				const bs = bevelSize * Math.sin( t * Math.PI / 2 ) + bevelOffset
-
-				for ( let i = 0, il = contour.length; i < il; i ++ ) {
-
-					const vert = scalePt2( contour[ i ], contourMovements[ i ], bs )
-					v( vert.x, vert.y, depth + z )
-				}
-
-				for ( let h = 0, hl = holes.length; h < hl; h ++ ) {
-
-					const ahole = holes[ h ]
-					oneHoleMovements = holesMovements[ h ]
-
-					for ( let i = 0, il = ahole.length; i < il; i ++ ) {
-
-						const vert = scalePt2( ahole[ i ], oneHoleMovements[ i ], bs )
-
-						if ( ! extrudeByPath ) {
-
-							v( vert.x, vert.y, depth + z )
-						}
-						else {
-
-							v( vert.x, vert.y + extrudePts[ steps - 1 ].y, extrudePts[ steps - 1 ].x + z )
-						}
-					}
-				}
-			}
-
 			buildLidFaces()
 
 			buildSideFaces()
@@ -342,39 +273,16 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				const start = verticesArray.length / 3
 
-				if ( bevelEnabled ) {
+				for ( let i = 0; i < flen; i ++ ) {
 
-					let layer = 0
-					let offset = vlen * layer
-
-					for ( let i = 0; i < flen; i ++ ) {
-
-						const face = faces[ i ]
-						f3( face[ 2 ] + offset, face[ 1 ] + offset, face[ 0 ] + offset )
-					}
-
-					layer = steps + bevelSegments * 2
-					offset = vlen * layer
-
-					for ( let i = 0; i < flen; i ++ ) {
-
-						const face = faces[ i ]
-						f3( face[ 0 ] + offset, face[ 1 ] + offset, face[ 2 ] + offset )
-					}
+					const face = faces[ i ]
+					f3( face[ 2 ], face[ 1 ], face[ 0 ] )
 				}
-				else {
 
-					for ( let i = 0; i < flen; i ++ ) {
+				for ( let i = 0; i < flen; i ++ ) {
 
-						const face = faces[ i ]
-						f3( face[ 2 ], face[ 1 ], face[ 0 ] )
-					}
-
-					for ( let i = 0; i < flen; i ++ ) {
-
-						const face = faces[ i ]
-						f3( face[ 0 ] + vlen * steps, face[ 1 ] + vlen * steps, face[ 2 ] + vlen * steps )
-					}
+					const face = faces[ i ]
+					f3( face[ 0 ] + vlen * steps, face[ 1 ] + vlen * steps, face[ 2 ] + vlen * steps )
 				}
 
 				scope.addGroup( start, verticesArray.length / 3 - start, 0 )
@@ -408,7 +316,7 @@ class ExtrudeGeometry extends BufferGeometry {
 					let k = i - 1
 					if ( k < 0 ) k = contour.length - 1
 
-					for ( let s = 0, sl = ( steps + bevelSegments * 2 ); s < sl; s ++ ) {
+					for ( let s = 0, sl = steps; s < sl; s ++ ) {
 
 						const slen1 = vlen * s
 						const slen2 = vlen * ( s + 1 )
